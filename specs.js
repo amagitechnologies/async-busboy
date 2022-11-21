@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const formstream = require('formstream');
 const asyncBusboy = require('./');
+const net = require('net');
 
 const fileContent = [
   'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
@@ -21,7 +22,10 @@ const readFileStreamPromise = (readStream) => new Promise((resolve, reject) => {
 
 describe('Async-busboy', () => {
   it('should gather all fields and streams', (done) => {
-    asyncBusboy(request()).then(formData => {
+    const _request = request()
+    asyncBusboy(_request).then(formData => {
+      expect(_request.socket.emit('close')).toBe(true)
+
       expect(Object.keys(formData.files).length).toBe(3);
       expect(Object.keys(formData.fields).length).toBe(5);
 
@@ -39,11 +43,14 @@ describe('Async-busboy', () => {
   });
 
   it('should gather all fields and streams using custom file handler', (done) => {
+    const _request = request()
     const fileContentPromises = [];
     const onFileHandler = (fieldname, file, filename, encoding, mimetype) => {
         fileContentPromises.push(readFileStreamPromise(file));
     };
-    asyncBusboy(request(), { onFile: onFileHandler }).then(formData => {
+    asyncBusboy(_request, { onFile: onFileHandler }).then(formData => {
+      expect(_request.socket.emit('close')).toBe(true)
+
       expect(Object.keys(formData.fields).length).toBe(5);
 
       // Check file contents
@@ -59,9 +66,12 @@ describe('Async-busboy', () => {
   });
 
   it('should return a valid collection', (done) => {
-    asyncBusboy(request())
+    const _request = request()
+    asyncBusboy(_request)
       .then(formData => {
-        var someCollection = formData.fields.someCollection;
+        expect(_request.socket.emit('close')).toBe(true)
+
+        const someCollection = formData.fields.someCollection;
         expect(Array.isArray(someCollection)).toBe(true);
         expect(someCollection[0]).toEqual({foo: 'foo', bar: 'bar'});
         done();
@@ -70,9 +80,12 @@ describe('Async-busboy', () => {
   });
 
   it('should return a valid array', (done) => {
-    asyncBusboy(request())
+    const _request = request()
+    asyncBusboy(_request)
       .then(formData => {
-        var fileName0 = formData.fields.file_name_0;
+        expect(_request.socket.emit('close')).toBe(true)
+
+        const fileName0 = formData.fields.file_name_0;
         expect(Array.isArray(fileName0)).toBe(true);
         expect(fileName0.length).toBe(3);
         expect(fileName0[0]).toEqual('super alpha file');
@@ -84,16 +97,22 @@ describe('Async-busboy', () => {
   });
 
   it('should not overwrite prototypes', (done) => {
-    asyncBusboy(request()).then(formData => {
+    const _request = request()
+    asyncBusboy(_request).then(formData => {
+      expect(_request.socket.emit('close')).toBe(true)
+
       expect(formData.fields.hasOwnProperty).toEqual(Object.prototype.hasOwnProperty)
       done();
     }).catch(done);
   });
 
   it('should throw error when the files limit is reached', (done) => {
-    asyncBusboy(request(), {limits: {
+    const _request = request()
+    asyncBusboy(_request, {limits: {
       files: 1
     }}).then(() => {
+        expect(_request.socket.emit('close')).toBe(true)
+
         done(makeError('Request_files_limit was not thrown'))
       },
       e => {
@@ -105,9 +124,12 @@ describe('Async-busboy', () => {
   });
 
   it('should throw error when the fields limit is reached', (done) => {
-    asyncBusboy(request(), {limits: {
+    const _request = request()
+    asyncBusboy(_request, {limits: {
       fields: 1
     }}).then(() => {
+        expect(_request.socket.emit('close')).toBe(true)
+
         done(makeError('Request_fields_limit was not thrown'))
       },
       e => {
@@ -126,7 +148,7 @@ function makeError(message) {
 function request() {
   // https://github.com/mscdex/busboy/blob/master/test/test-types-multipart.js
 
-  var stream = new Stream.PassThrough()
+  const stream = new Stream.PassThrough()
 
   stream.headers = {
     'content-type': 'multipart/form-data; boundary=---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k'
@@ -200,6 +222,9 @@ function request() {
     fileContent[2],
     '-----------------------------paZqsnEHRufoShdX6fh0lUhXBP4k--'
   ].join('\r\n'))
+
+  const socket = new net.Socket();
+  stream.socket = socket
 
   return stream
 }
