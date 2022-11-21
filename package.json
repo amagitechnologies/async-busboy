@@ -1,7 +1,7 @@
 {
-  "name": "async-busboy",
+  "name": "@amagitechnologies/async-busboy",
   "version": "1.1.0",
-  "description": "Promise based multipart form parser",
+  "description": "Promise-based multipart form parser",
   "main": "index.js",
   "repository": {
     "type": "git",
