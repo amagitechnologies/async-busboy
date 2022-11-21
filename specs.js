@@ -22,9 +22,9 @@ const readFileStreamPromise = (readStream) => new Promise((resolve, reject) => {
 
 describe('Async-busboy', () => {
   it('should gather all fields and streams', (done) => {
-    const r = request()
-    asyncBusboy(r).then(formData => {
-      expect(r.socket.emit('close')).toBe(true)
+    const _request = request()
+    asyncBusboy(_request).then(formData => {
+      expect(_request.socket.emit('close')).toBe(true)
 
       expect(Object.keys(formData.files).length).toBe(3);
       expect(Object.keys(formData.fields).length).toBe(5);
@@ -43,13 +43,13 @@ describe('Async-busboy', () => {
   });
 
   it('should gather all fields and streams using custom file handler', (done) => {
-    const r = request()
+    const _request = request()
     const fileContentPromises = [];
     const onFileHandler = (fieldname, file, filename, encoding, mimetype) => {
         fileContentPromises.push(readFileStreamPromise(file));
     };
-    asyncBusboy(r, { onFile: onFileHandler }).then(formData => {
-      expect(r.socket.emit('close')).toBe(true)
+    asyncBusboy(_request, { onFile: onFileHandler }).then(formData => {
+      expect(_request.socket.emit('close')).toBe(true)
 
       expect(Object.keys(formData.fields).length).toBe(5);
 
@@ -66,12 +66,12 @@ describe('Async-busboy', () => {
   });
 
   it('should return a valid collection', (done) => {
-    const r = request()
-    asyncBusboy(r)
+    const _request = request()
+    asyncBusboy(_request)
       .then(formData => {
-        expect(r.socket.emit('close')).toBe(true)
+        expect(_request.socket.emit('close')).toBe(true)
 
-        var someCollection = formData.fields.someCollection;
+        const someCollection = formData.fields.someCollection;
         expect(Array.isArray(someCollection)).toBe(true);
         expect(someCollection[0]).toEqual({foo: 'foo', bar: 'bar'});
         done();
@@ -80,12 +80,12 @@ describe('Async-busboy', () => {
   });
 
   it('should return a valid array', (done) => {
-    const r = request()
-    asyncBusboy(r)
+    const _request = request()
+    asyncBusboy(_request)
       .then(formData => {
-        expect(r.socket.emit('close')).toBe(true)
+        expect(_request.socket.emit('close')).toBe(true)
 
-        var fileName0 = formData.fields.file_name_0;
+        const fileName0 = formData.fields.file_name_0;
         expect(Array.isArray(fileName0)).toBe(true);
         expect(fileName0.length).toBe(3);
         expect(fileName0[0]).toEqual('super alpha file');
@@ -97,9 +97,9 @@ describe('Async-busboy', () => {
   });
 
   it('should not overwrite prototypes', (done) => {
-    const r = request()
-    asyncBusboy(r).then(formData => {
-      expect(r.socket.emit('close')).toBe(true)
+    const _request = request()
+    asyncBusboy(_request).then(formData => {
+      expect(_request.socket.emit('close')).toBe(true)
 
       expect(formData.fields.hasOwnProperty).toEqual(Object.prototype.hasOwnProperty)
       done();
@@ -107,11 +107,11 @@ describe('Async-busboy', () => {
   });
 
   it('should throw error when the files limit is reached', (done) => {
-    const r = request()
-    asyncBusboy(r, {limits: {
+    const _request = request()
+    asyncBusboy(_request, {limits: {
       files: 1
     }}).then(() => {
-        expect(r.socket.emit('close')).toBe(true)
+        expect(_request.socket.emit('close')).toBe(true)
 
         done(makeError('Request_files_limit was not thrown'))
       },
@@ -124,11 +124,11 @@ describe('Async-busboy', () => {
   });
 
   it('should throw error when the fields limit is reached', (done) => {
-    const r = request()
-    asyncBusboy(r, {limits: {
+    const _request = request()
+    asyncBusboy(_request, {limits: {
       fields: 1
     }}).then(() => {
-        expect(r.socket.emit('close')).toBe(true)
+        expect(_request.socket.emit('close')).toBe(true)
 
         done(makeError('Request_fields_limit was not thrown'))
       },
@@ -148,7 +148,7 @@ function makeError(message) {
 function request() {
   // https://github.com/mscdex/busboy/blob/master/test/test-types-multipart.js
 
-  var stream = new Stream.PassThrough()
+  const stream = new Stream.PassThrough()
 
   stream.headers = {
     'content-type': 'multipart/form-data; boundary=---------------------------paZqsnEHRufoShdX6fh0lUhXBP4k'
