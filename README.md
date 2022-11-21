@@ -15,7 +15,7 @@
 [download-image]: https://img.shields.io/npm/dm/async-busboy.svg?style=flat-square
 [download-url]: https://npmjs.org/package/async-busboy
 
-Originally by @m4nuC, and forked/updated by @amagitechnologies
+Originally by @m4nuC, and forked/updated by [AMAGI](https://amagi.io)
 
 The typical use case for this library is when handling forms that contain file upload field(s) mixed with other inputs.
 Parsing logic relies on [busboy](http://github.com/mscdex/busboy).
